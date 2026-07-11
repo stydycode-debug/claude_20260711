@@ -19,9 +19,21 @@
     번호 추첨하기
   </button>
 
-  <div style="border-top:1px solid #dddddd; padding-top:16px;">
+  <div style="border-top:1px solid #dddddd; padding-top:16px; margin-bottom:24px;">
     <span style="font-size:13px; font-weight:500; color:#6a6a6a;">최근 추첨 기록</span>
     <div id="history" style="display:flex; flex-direction:column; margin-top:8px;"></div>
+  </div>
+
+  <div style="border-top:1px solid #dddddd; padding-top:24px;">
+    <span style="font-size:13px; font-weight:500; color:#6a6a6a; display:block; margin-bottom:12px;">사주로 번호 추천받기</span>
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <input id="birth-date" type="date" style="flex:1; border:1px solid #dddddd; border-radius:8px; height:48px; padding:0 12px; font-size:14px; color:#222222;" />
+      <input id="birth-time" type="time" style="flex:1; border:1px solid #dddddd; border-radius:8px; height:48px; padding:0 12px; font-size:14px; color:#222222;" />
+    </div>
+    <button id="saju-btn" style="display:block; width:100%; background:#460479; color:#ffffff; font-size:16px; font-weight:500; border:none; border-radius:8px; padding:14px 24px; height:48px; cursor:pointer;">
+      사주 분석하고 번호 추천받기
+    </button>
+    <div id="saju-result" style="margin-top:16px;"></div>
   </div>
 </div>
 <script>
@@ -84,6 +96,52 @@ document.getElementById('draw-btn').addEventListener('click', () => {
 });
 
 renderBalls(drawNumbers(), false);
+
+const sajuBtn = document.getElementById('saju-btn');
+const sajuResult = document.getElementById('saju-result');
+
+sajuBtn.addEventListener('click', async () => {
+  const birthDate = document.getElementById('birth-date').value;
+  const birthTime = document.getElementById('birth-time').value;
+
+  if (!birthDate) {
+    sajuResult.innerHTML = '<p style="color:#c13515; font-size:13px;">생년월일을 입력해 주세요.</p>';
+    return;
+  }
+
+  sajuBtn.disabled = true;
+  sajuBtn.textContent = '분석 중...';
+  sajuResult.innerHTML = '';
+
+  try {
+    const res = await fetch('/api/saju', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ birthDate, birthTime }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      sajuResult.innerHTML = `<p style="color:#c13515; font-size:13px;">${data.error || '분석에 실패했습니다.'}</p>`;
+      return;
+    }
+
+    const ballsHtml = data.numbers.map((n) => {
+      const s = groupStyle(n);
+      return `<span style="display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px; border-radius:9999px; background:${s.bg}; color:${s.text}; font-size:15px; font-weight:600;">${n}</span>`;
+    }).join('');
+
+    sajuResult.innerHTML = `
+      <p style="font-size:14px; line-height:1.5; color:#3f3f3f; margin:0 0 12px;">${data.analysis}</p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">${ballsHtml}</div>
+    `;
+  } catch (err) {
+    sajuResult.innerHTML = '<p style="color:#c13515; font-size:13px;">네트워크 오류가 발생했습니다.</p>';
+  } finally {
+    sajuBtn.disabled = false;
+    sajuBtn.textContent = '사주 분석하고 번호 추천받기';
+  }
+});
 </script>
 </body>
 </html>
