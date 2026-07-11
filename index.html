@@ -36,6 +36,8 @@
   <div style="border-top:1px solid #dddddd; padding-top:24px;">
     <span style="font-size:13px; font-weight:500; color:#6a6a6a; display:block; margin-bottom:12px;">사주로 번호 추천받기</span>
 
+    <input id="user-name" type="text" placeholder="이름" style="width:100%; box-sizing:border-box; border:1px solid #dddddd; border-radius:8px; height:48px; padding:0 12px; font-size:14px; color:#222222; margin-bottom:8px;" />
+
     <div style="display:flex; gap:8px; margin-bottom:8px;">
       <div id="calendar-toggle" style="display:flex; flex:1; border:1px solid #dddddd; border-radius:8px; overflow:hidden;">
         <button type="button" class="toggle-btn active" data-value="solar" style="flex:1; border:none; background:#460479; color:#ffffff; font-size:14px; font-weight:500; height:44px; cursor:pointer;">양력</button>
@@ -156,11 +158,17 @@ const sajuBtn = document.getElementById('saju-btn');
 const sajuResult = document.getElementById('saju-result');
 
 sajuBtn.addEventListener('click', async () => {
+  const name = document.getElementById('user-name').value.trim();
   const birthDate = document.getElementById('birth-date').value;
   const timeUnknown = timeUnknownCheckbox.checked;
   const birthTime = timeUnknown ? '' : birthTimeInput.value;
   const calendarType = getToggleValue('calendar-toggle');
   const gender = getToggleValue('gender-toggle');
+
+  if (!name) {
+    sajuResult.innerHTML = '<p style="color:#c13515; font-size:13px;">이름을 입력해 주세요.</p>';
+    return;
+  }
 
   if (!birthDate) {
     sajuResult.innerHTML = '<p style="color:#c13515; font-size:13px;">생년월일을 입력해 주세요.</p>';
@@ -175,7 +183,7 @@ sajuBtn.addEventListener('click', async () => {
     const res = await fetch('/api/saju', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ birthDate, birthTime, timeUnknown, calendarType, gender }),
+      body: JSON.stringify({ name, birthDate, birthTime, timeUnknown, calendarType, gender }),
     });
     const data = await res.json();
 

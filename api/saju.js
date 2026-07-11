@@ -1,3 +1,5 @@
+const { createClient } = require('@supabase/supabase-js');
+
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
 
 function isValidNumberSet(numbers) {
@@ -13,7 +15,11 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { birthDate, birthTime, timeUnknown, calendarType, gender } = req.body || {};
+  const { name, birthDate, birthTime, timeUnknown, calendarType, gender } = req.body || {};
+  if (!name) {
+    res.status(400).json({ error: '이름을 입력해 주세요.' });
+    return;
+  }
   if (!birthDate) {
     res.status(400).json({ error: '생년월일을 입력해 주세요.' });
     return;
@@ -73,9 +79,31 @@ module.exports = async function handler(req, res) {
       return;
     }
 
+    const sortedNumbers = [...parsed.numbers].sort((a, b) => a - b);
+
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (supabaseUrl && supabaseKey) {
+      try {
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        await supabase.from('saju_submissions').insert({
+          name,
+          birth_date: birthDate,
+          birth_time: timeUnknown || !birthTime ? null : birthTime,
+          time_unknown: Boolean(timeUnknown) || !birthTime,
+          calendar_type: calendarType === 'lunar' ? 'lunar' : 'solar',
+          gender: gender === 'male' ? 'male' : 'female',
+          analysis: parsed.analysis,
+          numbers: sortedNumbers,
+        });
+      } catch (dbErr) {
+        console.error('Supabase 저장 실패:', dbErr.message);
+      }
+    }
+
     res.status(200).json({
       analysis: parsed.analysis,
-      numbers: [...parsed.numbers].sort((a, b) => a - b),
+      numbers: sortedNumbers,
     });
   } catch (err) {
     res.status(500).json({ error: `서버 오류: ${err.message}` });
