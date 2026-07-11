@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>로또 번호 추첨기</title>
+</head>
+<body style="margin:0; padding:40px 16px; background:#f7f7f7;">
+<h2 style="position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0);">1부터 45까지 숫자 중 서로 다른 6개를 뽑는 로또 번호 추첨기</h2>
+<div style="font-family:'Circular',-apple-system,system-ui,Roboto,'Helvetica Neue',sans-serif; background:#ffffff; border-radius:20px; box-shadow:rgba(0,0,0,0.02) 0 0 0 1px, rgba(0,0,0,0.04) 0 2px 6px 0, rgba(0,0,0,0.1) 0 4px 8px 0; padding:32px; max-width:480px; margin:0 auto;">
+  <div style="display:flex; flex-direction:column; align-items:center; gap:4px; margin-bottom:24px;">
+    <span style="font-size:8px; font-weight:700; letter-spacing:0.32px; text-transform:uppercase; color:#6a6a6a;">Lotto 6/45</span>
+    <span style="font-size:20px; font-weight:600; letter-spacing:-0.18px; color:#222222;">번호 추첨기</span>
+  </div>
+
+  <div id="balls" style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; min-height:52px; margin-bottom:24px;"></div>
+
+  <button id="draw-btn" style="display:block; margin:0 auto 28px; background:#ff385c; color:#ffffff; font-size:16px; font-weight:500; border:none; border-radius:8px; padding:14px 24px; height:48px; cursor:pointer;">
+    번호 추첨하기
+  </button>
+
+  <div style="border-top:1px solid #dddddd; padding-top:16px;">
+    <span style="font-size:13px; font-weight:500; color:#6a6a6a;">최근 추첨 기록</span>
+    <div id="history" style="display:flex; flex-direction:column; margin-top:8px;"></div>
+  </div>
+</div>
+<script>
+const groupStyle = (n) => {
+  if (n <= 10) return { bg: '#ff385c', text: '#ffffff' };
+  if (n <= 20) return { bg: '#460479', text: '#ffffff' };
+  if (n <= 30) return { bg: '#92174d', text: '#ffffff' };
+  if (n <= 40) return { bg: '#f2f2f2', text: '#222222' };
+  return { bg: '#222222', text: '#ffffff' };
+};
+
+function drawNumbers() {
+  const nums = new Set();
+  while (nums.size < 6) {
+    nums.add(1 + Math.floor(Math.random() * 45));
+  }
+  return Array.from(nums).sort((a, b) => a - b);
+}
+
+function renderBalls(nums, animate) {
+  const container = document.getElementById('balls');
+  container.innerHTML = '';
+  nums.forEach((n, i) => {
+    const s = groupStyle(n);
+    const el = document.createElement('div');
+    el.textContent = n;
+    el.style.cssText = `width:44px; height:44px; border-radius:9999px; background:${s.bg}; color:${s.text}; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:16px;`;
+    if (animate) {
+      el.style.opacity = '0';
+      el.style.transform = 'scale(0.5)';
+      el.style.transition = `opacity 0.25s ease ${i * 0.08}s, transform 0.25s ease ${i * 0.08}s`;
+    }
+    container.appendChild(el);
+    if (animate) {
+      requestAnimationFrame(() => {
+        el.style.opacity = '1';
+        el.style.transform = 'scale(1)';
+      });
+    }
+  });
+}
+
+function addHistory(nums) {
+  const hist = document.getElementById('history');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex; align-items:center; gap:12px; font-size:13px; color:#6a6a6a; padding:8px 0; border-bottom:1px solid #ebebeb;';
+  const dots = nums.map(n => {
+    const s = groupStyle(n);
+    return `<span style="display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:9999px; background:${s.bg}; color:${s.text}; font-size:11px; font-weight:600;">${n}</span>`;
+  }).join('');
+  row.innerHTML = `<span style="min-width:56px;">${new Date().toLocaleTimeString('ko-KR')}</span><span style="display:flex; gap:4px;">${dots}</span>`;
+  hist.prepend(row);
+  while (hist.children.length > 5) hist.removeChild(hist.lastChild);
+}
+
+document.getElementById('draw-btn').addEventListener('click', () => {
+  const nums = drawNumbers();
+  renderBalls(nums, true);
+  addHistory(nums);
+});
+
+renderBalls(drawNumbers(), false);
+</script>
+</body>
+</html>
