@@ -13,7 +13,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { birthDate, birthTime } = req.body || {};
+  const { birthDate, birthTime, timeUnknown, calendarType, gender } = req.body || {};
   if (!birthDate) {
     res.status(400).json({ error: '생년월일을 입력해 주세요.' });
     return;
@@ -27,8 +27,13 @@ module.exports = async function handler(req, res) {
 
   const model = process.env.OPENAI_MODEL || 'gpt-5.4-mini';
 
-  const prompt = `생년월일: ${birthDate}\n태어난 시간: ${birthTime || '모름'}\n\n` +
-    '위 생년월일(양력 기준)과 태어난 시간을 바탕으로 사주(四柱) 분석을 재미로 짧게 해줘. ' +
+  const calendarLabel = calendarType === 'lunar' ? '음력' : '양력';
+  const genderLabel = gender === 'male' ? '남성' : '여성';
+  const timeLabel = timeUnknown || !birthTime ? '모름' : birthTime;
+
+  const prompt = `생년월일: ${birthDate} (${calendarLabel})\n성별: ${genderLabel}\n태어난 시간: ${timeLabel}\n\n` +
+    '위 생년월일(양력/음력 구분 참고), 성별, 태어난 시간을 바탕으로 사주(四柱) 분석을 재미로 짧게 해줘. ' +
+    '태어난 시간을 모르면 시주(時柱)를 제외하고 나머지 정보로만 분석해줘. ' +
     '그리고 그 분석 내용과 어울리는 로또 6/45 번호 6개(1~45, 중복 없이)를 추천해줘. ' +
     '반드시 아래 JSON 형식으로만 답해:\n' +
     '{"analysis": "3~4문장의 사주 분석 요약", "numbers": [1부터 45 사이 중복 없는 정수 6개]}';
